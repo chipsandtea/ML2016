@@ -61,7 +61,15 @@ Theta2_grad = zeros(size(Theta2));
 %               the regularization separately and then add them to Theta1_grad
 %               and Theta2_grad from Part 2.
 %
-%PART 1
+
+%PART 1: FORWARD PROPAGATION
+%recode y matrix of training values to ry matrix
+IDMatrix = eye(num_labels);
+ry = zeros(m, num_labels);
+for i=1:m
+  ry(i, :)= IDMatrix(y(i), :); %set each row to the corresponding y vector
+end
+
 %forward propagate thru the nn
 X = [ones(m,1) X];
 a1 = X;
@@ -72,26 +80,33 @@ z3 = a2*Theta2';
 a3 = sigmoid(z3);
 hypo = a3;
 
-%recode y to ry
-IDMatrix = eye(num_labels);
-ry = zeros(m, num_labels);
-for i=1:m
-  ry(i, :)= IDMatrix(y(i), :); %set each row to the corresponding y vector
-end
 %calculate regularization penalty
 pen = sum(sum(Theta1(:, 2:end).^2,2))+sum(sum(Theta2(:, 2:end).^2,2));
 %calculate regularization term
 regTerm = lambda*pen/(2*m);
-%compute cost function
+
+%compute cost component
 cost = (-ry).*log(hypo)-(1-ry).*log(1-hypo);
+%compute cost function
 J = sum(sum(cost))/m + regTerm;
 
+%PART 2: BACKPROPAGATION
 
+sigma3 = a3-ry; %calculate sigma3 (from output layer)
+%calc sigma2 w/ z2 appended with ones column for bias unit
+sigma2 = (sigma3*Theta2).*sigmoidGradient([ones(size(z2,1),1) z2]); %calculate sigma2
+sigma2 = sigma2(:,2:end); %truncate first column for bias unit
 
+%calculate gradients
+delta1 = sigma2'*a1;
+delta2 = sigma3'*a2;
 
-
-
-
+%calculate regularized gradients
+%set penalty=0 for column vector representing bias unit
+pen1 = (lambda/m)*[zeros(size(Theta1,1),1) Theta1(:,2:end)];
+pen2 = (lambda/m)*[zeros(size(Theta2,1),1) Theta2(:,2:end)];
+Theta1_grad = delta1./m + pen1;
+Theta2_grad = delta2./m + pen2;
 
 
 
